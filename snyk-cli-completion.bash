@@ -1074,4 +1074,4 @@ eval "$__snyk_previous_extglob_setting"
 unset __snyk_previous_extglob_setting
 
 complete -F _snyk snyk snyk-tester
-export _SNYK_COMPLETE_DEBUG=yep
+# export _SNYK_COMPLETE_DEBUG=yep
