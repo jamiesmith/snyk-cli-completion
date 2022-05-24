@@ -9,9 +9,112 @@ function __snyk_debug_print
 }
 
 
+__snyk_to_extglob() {
+	local extglob=$( __snyk_to_alternatives "$1" )
+	echo "@($extglob)"
+}
+
+__snyk_to_alternatives() {
+	local parts=( $1 )
+	local IFS='|'
+	echo "${parts[*]}"
+}
+
+
+__snyk_pos_first_nonflag() {
+	local argument_flags=$1
+
+	local counter=$((${subcommand_pos:-${command_pos}} + 1))
+	while [ "$counter" -le "$cword" ]; do
+		if [ -n "$argument_flags" ] && eval "case '${words[$counter]}' in $argument_flags) true ;; *) false ;; esac"; then
+			(( counter++ ))
+			# eat "=" in case of --option=arg syntax
+			[ "${words[$counter]}" = "=" ] && (( counter++ ))
+		else
+			case "${words[$counter]}" in
+				-*)
+					;;
+				*)
+					break
+					;;
+			esac
+		fi
+
+		# Bash splits words at "=", retaining "=" as a word, examples:
+		# "--debug=false" => 3 words, "--log-opt syslog-facility=daemon" => 4 words
+		while [ "${words[$counter + 1]}" = "=" ] ; do
+			counter=$(( counter + 2))
+		done
+
+		(( counter++ ))
+	done
+
+	echo "$counter"
+}
+
+__snyk_subcommands() {
+    
+	local subcommands="$1"
+
+	local counter=$((command_pos + 1))
+	while [ "$counter" -lt "$cword" ]; do
+		case "${words[$counter]}" in
+			$(__snyk_to_extglob "$subcommands") )
+				subcommand_pos=$counter
+				local subcommand=${words[$counter]}
+				local completions_func=_snyk_${command}_${subcommand//-/_}
+				declare -F "$completions_func" >/dev/null && "$completions_func"
+				return 0
+				;;
+		esac
+		(( counter++ ))
+	done
+
+	return 1
+}
+
 ###############################################################################
 ## Snyk utilities
 ###############################################################################
+
+_snyk_snyk() {
+	# global options that may appear after the snyk command
+	local boolean_options="
+		$global_boolean_options
+		--help
+		--version -v
+	"
+
+	case "$prev" in
+		--config)
+			_filedir -d
+			return
+			;;
+		--context|-c)
+			__snyk_complete_contexts
+			return
+			;;
+		--log-level|-l)
+			__snyk_complete_log_levels
+			return
+			;;
+		$(__snyk_to_extglob "$global_options_with_args") )
+			return
+			;;
+	esac
+
+	case "$cur" in
+		-*)
+			COMPREPLY=( $( compgen -W "$boolean_options $global_options_with_args" -- "$cur" ) )
+			;;
+		*)
+			local counter=$( __snyk_pos_first_nonflag "$(__snyk_to_extglob "$global_options_with_args")" )
+			if [ "$cword" -eq "$counter" ]; then
+				COMPREPLY=( $( compgen -W "${commands[*]} help" -- "$cur" ) )
+			fi
+			;;
+	esac
+}
 
 __snyk_complete_environment()
 {
@@ -354,7 +457,6 @@ _snyk_iac()
 	local aliases="
 	"
 	__snyk_subcommands "$subcommands $aliases" && return
-    __snyk_debug_print "bsa"
 
 	case "$cur" in
 		-*)
@@ -911,6 +1013,8 @@ _snyk() {
 	COMPREPLY=()
 	local cur prev words cword
 	_get_comp_words_by_ref -n : cur prev words cword
+    
+    __snyk_debug_print "prev: [$prev] cur: [$cur] reply [$COMPREPLY]"
 
 	local command='snyk' command_pos=0 subcommand_pos
 	local counter=1
@@ -958,7 +1062,7 @@ _snyk() {
 		command=daemon
 		command_pos=0
 	fi
-
+    
 	local completions_func=_snyk_${command//-/_}
 	declare -F $completions_func >/dev/null && $completions_func
 
@@ -970,4 +1074,4 @@ eval "$__snyk_previous_extglob_setting"
 unset __snyk_previous_extglob_setting
 
 complete -F _snyk snyk snyk-tester
-export SNYK_COMPLETE_DEBUG=yep
+export _SNYK_COMPLETE_DEBUG=yep
