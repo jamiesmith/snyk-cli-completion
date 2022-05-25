@@ -116,6 +116,17 @@ _snyk_snyk() {
 	esac
 }
 
+__snyk_complete_docker_images()
+{
+    local docker_images=""
+    if  $(command -v docker &> /dev/null)
+    then
+	docker_images=$(docker images --format "{{.Repository}}")
+    fi
+
+    COMPREPLY=( $(compgen -W '$docker_images' -- "$cur") )
+}
+
 __snyk_complete_environment()
 {
     COMPREPLY=( $(compgen -W 'backend distributed external frontend hosted internal mobile onprem saas' -- "$cur") )
@@ -335,7 +346,7 @@ _snyk_container_monitor_and_test() {
         --print-deps
         --sarif
 	"
-
+	
 	local all_options="$options_with_args $boolean_options"
 
     # On macs with old bash (like mine) the nospace option doesn't work, so have to
@@ -413,13 +424,17 @@ _snyk_container_monitor_and_test() {
             ;;
     esac
     
-    
+
+   
     if [[ -z $rvalMode ]]
     then        
         case "$cur" in
             -*)
                 COMPREPLY=( $( compgen -W "$all_options" -- "$cur" ) )
                 ;;
+	    *)
+		__snyk_complete_docker_images
+		;;
         esac
     fi
 }
@@ -1074,4 +1089,4 @@ eval "$__snyk_previous_extglob_setting"
 unset __snyk_previous_extglob_setting
 
 complete -F _snyk snyk snyk-tester
-# export _SNYK_COMPLETE_DEBUG=yep
+export _SNYK_COMPLETE_DEBUG=yep
