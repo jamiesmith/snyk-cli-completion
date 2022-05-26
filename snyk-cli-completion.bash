@@ -118,13 +118,17 @@ _snyk_snyk() {
 
 __snyk_complete_docker_images()
 {
+    COMPREPLY=( $(compgen -W "$(__snyk_get_docker_images)" -- "$cur") )
+}
+
+__snyk_get_docker_images()
+{
     local docker_images=""
     if  $(command -v docker &> /dev/null)
     then
 	docker_images=$(docker images --format "{{.Repository}}")
     fi
-
-    COMPREPLY=( $(compgen -W '$docker_images' -- "$cur") )
+    echo "$docker_images"
 }
 
 __snyk_complete_environment()
