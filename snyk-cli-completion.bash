@@ -8,7 +8,6 @@ function __snyk_debug_print
     [[ -n $_SNYK_COMPLETE_DEBUG ]] && echo "$@" >> ZZZ
 }
 
-
 __snyk_to_extglob() {
 	local extglob=$( __snyk_to_alternatives "$1" )
 	echo "@($extglob)"
@@ -214,27 +213,48 @@ _snyk_code_test()
     if [[ "$cur" == *= ]]
     then
         rvalMode=true
-        prev=$cur
-        cur=""
+	if ! type compopt &>/dev/null
+	then
+	    prev=$cur
+	    cur=""
+	else
+	    cur=""
+	fi
     elif [[ "$cur" == *=* ]]
     then
-        rvalMode=true
-        prev="${cur%=*}="
-        cur=${cur#*=}
+	rvalMode=true
+	if ! type compopt &>/dev/null
+	then
+	    prev="${cur%=*}="
+	    cur=${cur#*=}
+	else
+	    cur=""
+	fi
+    fi
+
+    # if prev is an = then we are trying to find an rval. Loop back through the
+    # comp words to find which one and override
+    #
+    if [[ "$prev" == "=" ]]
+    then
+	for (( word=${#COMP_WORDS[@]}-1 ; word>=0 ; word-- ))
+	do
+	    [[ "${COMP_WORDS[word]}" == --* ]] && prev="${COMP_WORDS[word]}"
+	done
     fi
 
     __snyk_debug_print "prev: [$prev] cur: [$cur] reply [$COMPREPLY]"
 
     case "$prev" in
-        --json-file-output=)
+        --json-file-output=|--json-file-output)
             _filedir '@(json)'
             local files=( ${COMPREPLY[@]} )
             return
             ;;
-        --org=)
+        --org=|--org)
             return
             ;;
-        --severity-threshold=)
+        --severity-threshold=|--severity-threshold)
             __snyk_complete_severity_threshold
             return
             ;;
@@ -324,7 +344,7 @@ _snyk_container_monitor_and_test() {
     #
     local rvalMode=""
 
-	local options_with_args="
+    local options_with_args="
         --file=
         --json-file-output=
         --org=
@@ -342,7 +362,7 @@ _snyk_container_monitor_and_test() {
         --username=
 	"
 
-	local boolean_options="
+    local boolean_options="
         --app-vulns
         --exclude-base-image-vulns
         --json
@@ -351,7 +371,7 @@ _snyk_container_monitor_and_test() {
         --sarif
 	"
 	
-	local all_options="$options_with_args $boolean_options"
+    local all_options="$options_with_args $boolean_options"
 
     # On macs with old bash (like mine) the nospace option doesn't work, so have to
     # contend with the vars with args. If the current arg ends with an `=` then override
@@ -359,71 +379,92 @@ _snyk_container_monitor_and_test() {
     if [[ "$cur" == *= ]]
     then
         rvalMode=true
-        prev=$cur
-        cur=""
+	if ! type compopt &>/dev/null
+	then
+	    prev=$cur
+	    cur=""
+	else
+	    cur=""
+	fi
     elif [[ "$cur" == *=* ]]
     then
-        rvalMode=true
-        prev="${cur%=*}="
-        cur=${cur#*=}
+	rvalMode=true
+	if ! type compopt &>/dev/null
+	then
+	    prev="${cur%=*}="
+	    cur=${cur#*=}
+	else
+	    cur=""
+	fi
     fi
 
+    # if prev is an = then we are trying to find an rval. Loop back through the
+    # comp words to find which one and override
+    #
+    if [[ "$prev" == "=" ]]
+    then
+	for (( word=${#COMP_WORDS[@]}-1 ; word>=0 ; word-- ))
+	do
+	    [[ "${COMP_WORDS[word]}" == --* ]] && prev="${COMP_WORDS[word]}"
+	done
+    fi
+    
     __snyk_debug_print "prev: [$prev] cur: [$cur] reply [$COMPREPLY]"
 
     case "$prev" in
-        --file=)
+        --file=|--file)
             _filedir
             local files=( ${COMPREPLY[@]} )
             return
             ;;
-        --json-file-output=)
+        --json-file-output=|--json-file-output)
             _filedir '@(json)'
             local files=( ${COMPREPLY[@]} )
             return
             ;;
-        --org=)
+        --org=|--org)
             return
             ;;
-        --password=)
+        --password=|--password)
             return
             ;;
-        --platform=)
+        --platform=|--platform)
             COMPREPLY=( $(compgen -W 'linux/amd64 linux/arm64 linux/riscv64 linux/ppc64le linux/s390x linux/386 linux/arm/v7 linux/arm/v6' -- "$cur") )                        
             return
             ;;
-        --policy-path=)
+        --policy-path=|--policy-path)
             _filedir
             local files=( ${COMPREPLY[@]} )
             return
             ;;
-        --project-business-criticality=)
+        --project-business-criticality=|--project-business-criticality)
             __snyk_complete_severity_threshold
             return
             ;;
-        --project-environment=)
+        --project-environment=|--project-environment)
             __snyk_complete_environment
             return
             ;;
-        --project-lifecycle=)
+        --project-lifecycle=|--project-lifecycle)
             __snyk_complete_lifecycle
             return
             ;;
-        --project-name=)
+        --project-name=|--project-name)
             return
             ;;
-        --project-tags=|--tags=)
+        --project-tags=|--tags=|--project-tags=|--tags)
             return
             ;;
-        --sarif-file-output=)
+        --sarif-file-output=|--sarif-file-output)
             _filedir
             local files=( ${COMPREPLY[@]} )
             return
             ;;
-        --severity-threshold=)
+        --severity-threshold=|--severity-threshold)
             __snyk_complete_severity_threshold
             return
             ;;
-        --username=)
+        --username=|--username)
             return
             ;;
     esac
@@ -539,44 +580,65 @@ _snyk_ignore()
     if [[ "$cur" == *= ]]
     then
         rvalMode=true
-        prev=$cur
-        cur=""
+	if ! type compopt &>/dev/null
+	then
+	    prev=$cur
+	    cur=""
+	else
+	    cur=""
+	fi
     elif [[ "$cur" == *=* ]]
     then
-        rvalMode=true
-        prev="${cur%=*}="
-        cur=${cur#*=}
+	rvalMode=true
+	if ! type compopt &>/dev/null
+	then
+	    prev="${cur%=*}="
+	    cur=${cur#*=}
+	else
+	    cur=""
+	fi
+    fi
+
+    # if prev is an = then we are trying to find an rval. Loop back through the
+    # comp words to find which one and override
+    #
+    if [[ "$prev" == "=" ]]
+    then
+	for (( word=${#COMP_WORDS[@]}-1 ; word>=0 ; word-- ))
+	do
+	    [[ "${COMP_WORDS[word]}" == --* ]] && prev="${COMP_WORDS[word]}"
+	done
     fi
 
     __snyk_debug_print "prev: [$prev] cur: [$cur] reply [$COMPREPLY]"
 
     case "$prev" in
-        --expiry=)
+        --expiry=|--expiry)
             return
             ;;
-        --file-path-group=)
+        --file-path-group=|--file-path-group)
             [global|code|iac-drift]
             ;;
-        --file-path=)
+        --file-path=|--file-path)
             _filedir
             local files=( ${COMPREPLY[@]} )
             return
             ;;        
-        --id=)
+        --id=|--id)
             return
             ;;
             
-        --path=)
+        --path=|--path)
             _filedir
             local files=( ${COMPREPLY[@]} )
             return
             ;;        
-        --policy-path=)
+        --policy-path=|--policy-path)
             _filedir
             local files=( ${COMPREPLY[@]} )
             return
             ;;        
-        --reason=)
+        --reason=|--reason)
             return
             ;;
     esac
@@ -670,93 +732,114 @@ _snyk_monitor()
     if [[ "$cur" == *= ]]
     then
         rvalMode=true
-        prev=$cur
-        cur=""
+	if ! type compopt &>/dev/null
+	then
+	    prev=$cur
+	    cur=""
+	else
+	    cur=""
+	fi
     elif [[ "$cur" == *=* ]]
     then
-        rvalMode=true
-        prev="${cur%=*}="
-        cur=${cur#*=}
+	rvalMode=true
+	if ! type compopt &>/dev/null
+	then
+	    prev="${cur%=*}="
+	    cur=${cur#*=}
+	else
+	    cur=""
+	fi
+    fi
+
+    # if prev is an = then we are trying to find an rval. Loop back through the
+    # comp words to find which one and override
+    #
+    if [[ "$prev" == "=" ]]
+    then
+	for (( word=${#COMP_WORDS[@]}-1 ; word>=0 ; word-- ))
+	do
+	    [[ "${COMP_WORDS[word]}" == --* ]] && prev="${COMP_WORDS[word]}"
+	done
     fi
 
     __snyk_debug_print "prev: [$prev] cur: [$cur] reply [$COMPREPLY]"
 
     case "$prev" in
-        --command=)
+        --command=|--command)
             return
             ;;
-        --configuration-attributes=)
+        --configuration-attributes=|--configuration-attributes)
             return
             ;;
-        --configuration-matching=)
+        --configuration-matching=|--configuration-matching)
             return
             ;;
-        --detection-depth=)
+        --detection-depth=|--detection-depth)
             return
             ;;
-        --exclude=)
+        --exclude=|--exclude)
             return
             ;;
-        --file=)
+        --file=|--file)
             _filedir
             local files=( ${COMPREPLY[@]} )
             return
             ;;
-        --init-script=)
+        --init-script=|--init-script)
             _filedir
             local files=( ${COMPREPLY[@]} )
             return
             ;;
-        --org=)
+        --org=|--org)
             return
             ;;
-        --package-manager=)
+        --package-manager=|--package-manager)
             return
             ;;
-        --policy-path=)
+        --policy-path=|--policy-path)
             _filedir
             local files=( ${COMPREPLY[@]} )
             return
             ;;
-        --project-business-criticality=)
+        --project-business-criticality=|--project-business-criticality)
             __snyk_complete_severity_threshold
             return
             ;;
-        --project-environment=)
+        --project-environment=|--project-environment)
             __snyk_complete_environment
             return
             ;;
-        --project-lifecycle=)
+        --project-lifecycle=|--project-lifecycle)
             __snyk_complete_lifecycle
             return
             ;;
-        --project-name=)
+        --project-name=|--project-name)
             return
             ;;
-        --project-name-prefix=)
+        --project-name-prefix=|--project-name-prefix)
             return
             ;;
-        --project-tags=)
+        --project-tags=|--project-tags)
             return
             ;;
-        --reachable-timeout=)
+        --reachable-timeout=|--reachable-timeout)
             return
             ;;
-        --remote-repo-url=)
+        --remote-repo-url=|--remote-repo-url)
             return
             ;;
-        --skip-unresolved=)
+        --skip-unresolved=|--skip-unresolved)
             __snyk_complete_true_false
             return
             ;;
-        --strict-out-of-sync=)
+        --strict-out-of-sync=|--strict-out-of-sync)
             __snyk_complete_true_false
             return
             ;;
-        --sub-project=)
+        --sub-project=|--sub-project)
             return
             ;;
-        --target-reference=)
+        --target-reference=|--target-reference)
             return
             ;;
     esac
@@ -858,99 +941,119 @@ _snyk_test()
     if [[ "$cur" == *= ]]
     then
         rvalMode=true
-        prev=$cur
-        cur=""
+	if ! type compopt &>/dev/null
+	then
+	    prev=$cur
+	    cur=""
+	else
+	    cur=""
+	fi
     elif [[ "$cur" == *=* ]]
     then
-        rvalMode=true
-        prev="${cur%=*}="
-        cur=${cur#*=}
+	rvalMode=true
+	if ! type compopt &>/dev/null
+	then
+	    prev="${cur%=*}="
+	    cur=${cur#*=}
+	else
+	    cur=""
+	fi
     fi
 
+    # if prev is an = then we are trying to find an rval. Loop back through the
+    # comp words to find which one and override
+    #
+    if [[ "$prev" == "=" ]]
+    then
+	for (( word=${#COMP_WORDS[@]}-1 ; word>=0 ; word-- ))
+	do
+	    [[ "${COMP_WORDS[word]}" == --* ]] && prev="${COMP_WORDS[word]}"
+	done
+    fi
     __snyk_debug_print "prev: [$prev] cur: [$cur] reply [$COMPREPLY]"
 
     case "$prev" in
-        --command=)
+        --command=|--command)
             return
             ;;
-        --configuration-attributes=)
+        --configuration-attributes=|--configuration-attributes)
             return
             ;;
-        --configuration-matching=)
+        --configuration-matching=|--configuration-matching)
             return
             ;;
-        --detection-depth=)
+        --detection-depth=|--detection-depth)
             return
             ;;
-        --exclude=)
+        --exclude=|--exclude)
             return
             ;;
-        --fail-on=)
+        --fail-on=|--fail-on)
             return
             ;;
-        --file=)
+        --file=|--file)
             _filedir
             local files=( ${COMPREPLY[@]} )
             return
             ;;
-        --init-script=)
+        --init-script=|--init-script)
             _filedir
             local files=( ${COMPREPLY[@]} )
             return
             ;;
-        --json-file-output=)
+        --json-file-output=|--json-file-output)
             _filedir '@(json)'
             local files=( ${COMPREPLY[@]} )
             return
             ;;
-        --org=)
+        --org=|--org)
             return
             ;;
-        --package-manager=)
+        --package-manager=|--package-manager)
             return
             ;;
-        --policy-path=)
+        --policy-path=|--policy-path)
             _filedir
             local files=( ${COMPREPLY[@]} )
             return
             ;;
-        --project-name-prefix=)
+        --project-name-prefix=|--project-name-prefix)
             return
             ;;
-        --project-name=)
+        --project-name=|--project-name)
             return
             ;;
-        --reachable-timeout=)
+        --reachable-timeout=|--reachable-timeout)
             return
             ;;
-        --remote-repo-url=)
+        --remote-repo-url=|--remote-repo-url)
             return
             ;;
-        --sarif-file-output=)
+        --sarif-file-output=|--sarif-file-output)
             _filedir
             local files=( ${COMPREPLY[@]} )
             return
             ;;
-        --severity-threshold=)
+        --severity-threshold=|--severity-threshold)
             __snyk_complete_severity_threshold
             return
             ;;
-        --show-vulnerable-paths=)
+        --show-vulnerable-paths=|--show-vulnerable-paths)
             __snyk_complete_vulnerable_paths
             return
             ;;
-        --skip-unresolved=)
+        --skip-unresolved=|--skip-unresolved)
             __snyk_complete_true_false
             return
             ;;
-        --strict-out-of-sync=)
+        --strict-out-of-sync=|--strict-out-of-sync)
             __snyk_complete_true_false
             return
             ;;
         --sub-project=|--gradle-sub-project)
             return
             ;;
-        --target-reference=)
+        --target-reference=|--target-reference)
             return
             ;;
     esac
@@ -1093,4 +1196,4 @@ eval "$__snyk_previous_extglob_setting"
 unset __snyk_previous_extglob_setting
 
 complete -F _snyk snyk snyk-tester
-export _SNYK_COMPLETE_DEBUG=yep
+# export _SNYK_COMPLETE_DEBUG=yep
