@@ -82,6 +82,7 @@ _snyk_snyk() {
 		$global_boolean_options
 		--help
 		--version -v
+		--about
 	"
 
 	case "$prev" in
