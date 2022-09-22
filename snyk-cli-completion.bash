@@ -151,6 +151,11 @@ __snyk_complete_severity_threshold()
     COMPREPLY=( $(compgen -W 'low medium high critical' -- "$cur") )
 }
 
+__snyk_complete_fail_on()
+{
+    COMPREPLY=( $(compgen -W 'all upgradable patchable' -- "$cur") )
+}
+
 __snyk_complete_lifecycle()
 {
     COMPREPLY=( $(compgen -W 'development production sandbox' -- "$cur") )
@@ -196,6 +201,7 @@ _snyk_code_test()
     local rvalMode=""
 
 	local options_with_args="
+        --fail-on=
         --json-file-output=
         --org=
         --severity-threshold=
@@ -247,6 +253,10 @@ _snyk_code_test()
     __snyk_debug_print "prev: [$prev] cur: [$cur] reply [$COMPREPLY]"
 
     case "$prev" in
+        --fail-on=|--fail-on)
+            __snyk_complete_fail_on
+            return
+            ;;
         --json-file-output=|--json-file-output)
             _filedir '@(json)'
             local files=( ${COMPREPLY[@]} )
@@ -346,6 +356,7 @@ _snyk_container_monitor_and_test() {
     local rvalMode=""
 
     local options_with_args="
+        --fail-on=
         --file=
         --json-file-output=
         --org=
@@ -413,6 +424,10 @@ _snyk_container_monitor_and_test() {
     __snyk_debug_print "prev: [$prev] cur: [$cur] reply [$COMPREPLY]"
 
     case "$prev" in
+        --fail-on=|--fail-on)
+            __snyk_complete_fail_on
+            return
+            ;;
         --file=|--file)
             _filedir
             local files=( ${COMPREPLY[@]} )
@@ -990,6 +1005,7 @@ _snyk_test()
             return
             ;;
         --fail-on=|--fail-on)
+            __snyk_complete_fail_on
             return
             ;;
         --file=|--file)
