@@ -468,6 +468,7 @@ _snyk_container_monitor_and_test() {
     local boolean_options="
         --app-vulns
         --exclude-base-image-vulns
+        --exclude-app-vulns
         --json
         --nested-jars-depth
         --print-deps
