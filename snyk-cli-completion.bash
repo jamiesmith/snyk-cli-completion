@@ -148,7 +148,7 @@ __snyk_complete_vulnerable_paths()
 
 __snyk_complete_sbom_format()
 {
-    COMPREPLY=( $(compgen -W 'cyclonedx+json' -- "$cur") )
+    COMPREPLY=( $(compgen -W 'cyclonedx1.4+json cyclonedx1.4+xml spdx2.3+json' -- "$cur") )
 }
 
 __snyk_complete_severity_threshold()
@@ -352,10 +352,12 @@ _snyk_sbom() {
     local rvalMode=""
 
     local options_with_args="
+        --file=
         --format=
 	"
 
     local boolean_options="
+        --unmanaged
         --experimental
 	"
 	
@@ -405,7 +407,7 @@ _snyk_sbom() {
             local files=( ${COMPREPLY[@]} )
             return
             ;;
-        --format=|--file)
+        --format=|--format)
             __snyk_complete_sbom_format
             return
             ;;
@@ -422,9 +424,6 @@ _snyk_sbom() {
             -*)
                 COMPREPLY=( $( compgen -W "$all_options" -- "$cur" ) )
                 ;;
-	    *)
-		__snyk_complete_docker_images
-		;;
         esac
     fi
 }
