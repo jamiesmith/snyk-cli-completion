@@ -354,11 +354,15 @@ _snyk_sbom() {
     local options_with_args="
         --file=
         --format=
+        --org=
+        --exclude=
+        --detection-depth=
 	"
 
     local boolean_options="
         --unmanaged
-        --experimental
+        --all-projects
+        --prune-repeated-subdependencies
 	"
 	
     local all_options="$options_with_args $boolean_options"
@@ -402,6 +406,11 @@ _snyk_sbom() {
     __snyk_debug_print "prev: [$prev] cur: [$cur] reply [$COMPREPLY]"
 
     case "$prev" in
+        --exclude=|--exclude)
+            _filedir
+            local files=( ${COMPREPLY[@]} )
+            return
+            ;;
         --file=|--file)
             _filedir
             local files=( ${COMPREPLY[@]} )
