@@ -436,10 +436,95 @@ _snyk_sbom() {
         esac
     fi
 }
-
 ###############################################################################
 ## Snyk Container
 ###############################################################################
+
+_snyk_container_sbom() {
+    # This is used to get around the mac bash/nospace issue when using --flag-with-value= type params
+    #
+    local rvalMode=""
+
+    local options_with_args="
+        --format=
+        --org=
+	"
+
+    local boolean_options="
+        --exclude-app-vulns
+	"
+	
+    local all_options="$options_with_args $boolean_options"
+
+    # On macs with old bash (like mine) the nospace option doesn't work, so have to
+    # contend with the vars with args. If the current arg ends with an `=` then override
+    # 
+    if [[ "$cur" == *= ]]
+    then
+        rvalMode=true
+	if ! type compopt &>/dev/null
+	then
+	    prev=$cur
+	    cur=""
+	else
+	    cur=""
+	fi
+    elif [[ "$cur" == *=* ]]
+    then
+	rvalMode=true
+	if ! type compopt &>/dev/null
+	then
+	    prev="${cur%=*}="
+	    cur=${cur#*=}
+	else
+	    cur=""
+	fi
+    fi
+
+    # if prev is an = then we are trying to find an rval. Loop back through the
+    # comp words to find which one and override
+    #
+    if [[ "$prev" == "=" ]]
+    then
+	for (( word=${#COMP_WORDS[@]}-1 ; word>=0 ; word-- ))
+	do
+	    [[ "${COMP_WORDS[word]}" == --* ]] && prev="${COMP_WORDS[word]}"
+	done
+    fi
+    
+    __snyk_debug_print "prev: [$prev] cur: [$cur] reply [$COMPREPLY]"
+
+    case "$prev" in
+        --exclude=|--exclude)
+            _filedir
+            local files=( ${COMPREPLY[@]} )
+            return
+            ;;
+        --file=|--file)
+            _filedir
+            local files=( ${COMPREPLY[@]} )
+            return
+            ;;
+        --format=|--format)
+            __snyk_complete_sbom_format
+            return
+            ;;
+        --org=|--org)
+            return
+            ;;
+    esac
+    
+
+   
+    if [[ -z $rvalMode ]]
+    then        
+        case "$cur" in
+            -*)
+                COMPREPLY=( $( compgen -W "$all_options" -- "$cur" ) )
+                ;;
+        esac
+    fi
+}
 
 _snyk_container_monitor() {
     _snyk_container_monitor_and_test
@@ -604,6 +689,7 @@ _snyk_container() {
 	local subcommands="
 		monitor
         test
+        sbom
 	"
 	local aliases="
 	"
