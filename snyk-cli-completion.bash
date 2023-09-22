@@ -1307,6 +1307,7 @@ _snyk() {
         code
         config
         container
+        fix
         iac
         ignore
         log4shell
