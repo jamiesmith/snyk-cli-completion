@@ -141,6 +141,13 @@ __snyk_complete_true_false()
     COMPREPLY=( $(compgen -W 'true false' -- "$cur") )
 }
 
+# Right now this is only used by sbom verb, if something else uses it then split it off
+#
+__snyk_complete_package_manager()
+{
+    COMPREPLY=( $(compgen -W 'pip' -- "$cur") )
+}
+
 __snyk_complete_vulnerable_paths()
 {
     COMPREPLY=( $(compgen -W 'none some all' -- "$cur") )
@@ -351,21 +358,68 @@ _snyk_sbom() {
     #
     local rvalMode=""
 
+    # For args that are global or appear in more than one flavor
+    #
     local options_with_args="
+        --detection-depth=
+        --exclude=
         --file=
         --format=
+        --max-depth=
         --org=
-        --exclude=
-        --detection-depth=
+        --package-manager=
+        --skip-unresolved=
+        --strict-out-of-sync=
+        --version=
 	"
 
+    local options_with_args_gradle="
+        --configuration-attributes=
+        --configuration-matching=
+        --sub-project=
+        --init-script=
+	"
+
+
     local boolean_options="
-        --unmanaged
         --all-projects
+        --dev
         --prune-repeated-subdependencies
+        --unmanaged
 	"
 	
-    local all_options="$options_with_args $boolean_options"
+    local boolean_options_maven="
+        --maven-aggregate-project
+        --scan-all-unmanaged
+        --scan-unmanaged
+    "    
+    
+    local boolean_options_gradle="
+        --all-projects
+        --all-sub-projects
+    "    
+    # I don't know if the --packages-folder is really not "--packages-folder="
+    #
+    local boolean_options_nuget="
+        --assets-project-name
+        --packages-folder
+    "    
+
+    local boolean_options_yarn="
+        --yarn-workspaces
+    "    
+
+    local all_options="
+        $options_with_args
+        $options_with_args_gradle
+        $boolean_options
+        $boolean_options_maven
+        $boolean_options_gradle
+        $boolean_options_nuget
+        $boolean_options_yarn
+    "
+    
+
 
     # On macs with old bash (like mine) the nospace option doesn't work, so have to
     # contend with the vars with args. If the current arg ends with an `=` then override
@@ -420,12 +474,23 @@ _snyk_sbom() {
             __snyk_complete_sbom_format
             return
             ;;
+        --init-script=|--init-script)
+            _filedir
+            local files=( ${COMPREPLY[@]} )
+            return
+            ;;
         --org=|--org)
             return
             ;;
+        --package-manager=|--package-manager)
+            __snyk_complete_package_manager
+            return
+            ;;
+        --strict-out-of-sync=|--strict-out-of-sync)
+            __snyk_complete_true_false
+            return
+            ;;
     esac
-    
-
    
     if [[ -z $rvalMode ]]
     then        
