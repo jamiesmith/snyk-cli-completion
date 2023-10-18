@@ -578,17 +578,20 @@ _snyk_container_sbom() {
             return
             ;;
     esac
-    
 
-   
     if [[ -z $rvalMode ]]
     then        
         case "$cur" in
             -*)
                 COMPREPLY=( $( compgen -W "$all_options" -- "$cur" ) )
                 ;;
+	    *)
+    		__snyk_complete_docker_images
+		;;
         esac
     fi
+
+    
 }
 
 _snyk_container_monitor() {
